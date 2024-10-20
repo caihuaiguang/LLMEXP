@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Word Importance Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #prompt {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        #result span {
+            margin: 5px;
+            cursor: pointer;
+        }
+        #debug {
+            margin-top: 20px;
+            font-size: 12px;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>LLM Word Importance Visualization</h1>
+    <form id="summaryForm">
+        <textarea id="prompt" name="prompt" placeholder="Enter your prompt here..."></textarea>
+        <button type="submit">Generate Summary</button>
+    </form>
+    <div id="result"></div>
+    <div id="debug"></div> <!-- Debug area to show raw data -->
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#summaryForm').on('submit', function(event) {
+                event.preventDefault();
+                const prompt = $('#prompt').val();
+
+                $.post('/generate_summary', { prompt: prompt }, function(data) {
+                    // Debug information
+                    $('#debug').text(JSON.stringify(data));
+
+                    $('#result').empty();  // Clear previous results
+
+                    data.forEach(item => {
+                        // Create a new HTML element for the generated word
+                        const wordElement = $('<span>').text(item.generated_word).css('margin', '5px');
+
+                        // Display color based on score when mouse hovers
+                        wordElement.hover(function() {
+                            const wordInfo = item.scores.map(score => {
+                                const color = score.score > 0 ? 'red' : 'blue';  // Set color based on score
+                                return `<span style="color: ${color}">${score.input_word} (${score.score.toFixed(2)})</span>`;
+                            }).join(', ');
+
+                            $(this).attr('title', wordInfo);  // Set tooltip with word info
+                        });
+
+                        $('#result').append(wordElement);  // Append the new word to the result div
+                    });
+                }).fail(function() {
+                    alert('An error occurred while processing your request.');
+                });
+            });
+        });
+    </script>
+</body>
+</html>
